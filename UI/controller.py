@@ -6,19 +6,67 @@ class Controller:
     def __init__(self, view: View, model: Model):
         self._view = view
         self._model = model
+        self._selected_albums = []
 
     def handle_crea_grafo(self, e):
         """ Handler per gestire creazione del grafo """""
         # TODO
+        try:
+            min_durata = float(self._view.txt_durata.value)
+        except ValueError:
+            self._view.show_alert("inserire una durata valida")
+            return
+
+        self._model.carica_album(min_durata)
+        self._model.carica_playlist()
+        self._model.costruisci_grafo()
+
+        self._view.dd_album.options = [ft.dropdown.Option(a.title) for a in self._model.albums]
+        self._view.lista_visualizzazione_1.controls.clear()
+        self._view.lista_visualizzazione_1.controls.append(ft.Text(f"grafo creato : {len(self._model.g.nodes)} album, {len(self._model.g.edges)} archi"))
+        self._view.update()
 
     def get_selected_album(self, e):
         """ Handler per gestire la selezione dell'album dal dropdown """""
         # TODO
+        title = e.control.value
+        self._selected_albums = next((a for a in self._model.albums if a.title == title), None)
 
     def handle_analisi_comp(self, e):
         """ Handler per gestire l'analisi della componente connessa """""
         # TODO
+        if not self._selected_albums:
+            self._view.show_alert("inserire una album")
+            return
+        else:
+            component = self._model.get_componente(self._selected_albums)
+            durata_totale = sum(a.duration for a in component)
+
+            self._view.lista_visualizzazione_2.controls.clear()
+            self._view.lista_visualizzazione_2.controls.append(ft.Text(f"dimensione componente {len(component)}"))
+            self._view.lista_visualizzazione_2.controls.append(ft.Text(f"durata totale {durata_totale} minuti"))
+            self._view.update()
+
 
     def handle_get_set_album(self, e):
         """ Handler per gestire il problema ricorsivo di ricerca del set di album """""
         # TODO
+        if not self._selected_albums:
+            self._view.show_alert("inserire una album")
+            return
+        try:
+            max_durata = float(self._view.txt_durata.value)
+        except ValueError:
+            self._view.show_alert("inserire un valore numerico valido")
+            return
+
+        best_set = self._model.compute_best_set(self._selected_albums, max_durata)
+
+        total_duration = sum(a.duration for a in best_set)
+        self._view.lista_visualizzazione_3.controls.clear()
+        self._view.lista_visualizzazione_3.controls.append(ft.Text(f"set trovato {len(best_set)} album, {total_duration} minuti"))
+        self._view.update()
+
+        for a in best_set:
+            self._view.lista_visualizzazione_3.controls.append(ft.Text(f"{a.title} : {a.duration} minuti"))
+        self._view.update()

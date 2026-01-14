@@ -1,5 +1,6 @@
 import flet as ft
 from UI.alert import AlertManager
+from model.model import Model
 
 class View:
     def __init__(self, page: ft.Page):
